@@ -5,7 +5,6 @@ public class Bob : MonoBehaviour
 {
 	public float Speed = 2.0f;
 	public float Amount = 1.0f;
-	public float Offset = 0.0f;
 	
 	void Start()
 	{
@@ -15,6 +14,6 @@ public class Bob : MonoBehaviour
 	
 	void Update() 
 	{
-		transform.Translate( Vector3.up * Mathf.Sin( Offset + Time.time * Speed ) * Amount );
+		transform.Translate( Vector3.up * Mathf.Sin( Time.time * Speed ) * Amount );
 	}
 }

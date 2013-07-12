@@ -54,6 +54,7 @@
      <Compile Include="Assets\Scripts\Enviroment\Bob.cs" />
      <Compile Include="Assets\Scripts\Enviroment\BreakableLight.cs" />
      <Compile Include="Assets\Scripts\Enviroment\Corrupt.cs" />
+     <Compile Include="Assets\Scripts\Enviroment\CyanosisVibrator.cs" />
      <Compile Include="Assets\Scripts\Enviroment\DiracGlobals.cs" />
      <Compile Include="Assets\Scripts\Enviroment\EddieCameron-DrawRope-014b2e9\EddieCameron-DrawRope-014b2e9\DrawRope.cs" />
      <Compile Include="Assets\Scripts\Enviroment\EnvCubemap.cs" />
@@ -162,6 +163,7 @@
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\_BloomAndFlares\BrightPassFilter2.shader" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\_DepthOfField\SeparableBlur.shader" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\MotionBlurClear.shader" />
+     <None Include="Assets\Shaders\Base_Cutout.shader" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\ColorCorrectionEffect.shader" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\GrayscaleEffect.shader" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\SepiaToneEffect.shader" />
