@@ -48,16 +48,25 @@ Shader "Base_Texture"
 		fixed _Tertiary;
  		//fixed4 _LightColor0; 
 		
-		fixed CalculateSpecular( fixed3 lDir, fixed3 vDir, fixed3 norm, float gloss )
+ 		float CalculateGuass( float angleNormalHalf, float blob )
+ 		{
+			float exponent = angleNormalHalf / blob;
+			exponent = -( exponent * exponent );
+			return exp( exponent );
+ 		}
+		
+		float CalculateSpecular( fixed3 lDir, fixed3 vDir, fixed3 norm, float gloss )
 		{	 
 			float3 halfVector = normalize( lDir + vDir );
 			float specDot = saturate( dot( halfVector, norm ) );
+			float angleNormalHalf = acos( dot( halfVector, norm ) );
+			float modGloss = gloss * _Gloss;
 			
-			float primaryBlob = pow( specDot, gloss * _Gloss * 128.0 );
-			float secondaryBlob = pow( specDot, gloss * _Gloss * 16.0 );
-			float tertiaryBlob = pow( specDot, gloss * _Gloss * 8.0 );
-			float tripleSpec = lerp( primaryBlob, secondaryBlob, _PrimarySecondary ) + tertiaryBlob * _Tertiary;
+			float primaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 8.0 ) );
+			float secondaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 4.0 ) );
+			float tertiaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 2.0 ) );
 
+			float tripleSpec = lerp( primaryBlob, secondaryBlob, _PrimarySecondary ) + tertiaryBlob * _Tertiary;
 			return tripleSpec;
 		}
 		
@@ -131,7 +140,7 @@ Shader "Base_Texture"
 			float emitSecondaryBlob = pow( fresnelDot, _FresnelEmitPower );
 			float emitFresnel = lerp( emitPrimaryBlob, emitSecondaryBlob, _FresnelEmitPrimarySecondary );
 			
-			o.Emission = emitFresnel * _FresnelEmitColor.rgb * spec * ( _FresnelEmitColor.a * 16.0f );
+			o.Emission = emitFresnel * _FresnelEmitColor.rgb * ( _FresnelEmitColor.a * 16.0f );
 			o.Specular = spec * _SpecAmount * lerp( fresnel, 1.0, _FresnelBalance );
 		}
 	

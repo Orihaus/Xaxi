@@ -57,7 +57,7 @@ public class PlanarReflection : MonoBehaviour
 	
 	private RenderTexture CreateTextureFor(Camera cam) 
 	{
-		RenderTexture rt = new RenderTexture(Mathf.FloorToInt(cam.pixelWidth*0.5F), Mathf.FloorToInt(cam.pixelHeight*0.5F), 24);	
+		RenderTexture rt = new RenderTexture(Mathf.FloorToInt(cam.pixelWidth), Mathf.FloorToInt(cam.pixelHeight), 24);	
 		rt.hideFlags = HideFlags.DontSave;
 		return rt;
 	}	
