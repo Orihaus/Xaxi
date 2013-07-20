@@ -2,10 +2,14 @@ Shader "Base_Artifact"
 {
 	Properties  
 	{
-		_SpecAmount ( "Specular Amount", Range( 0.0, 16.0 ) ) = 1.0
+		_DiffuseAmount ( "Diffuse Amount", Range( 0.0, 0.075 ) ) = 0.25
+		_TexAmount ( "Texture Amount", Range( 0.0, 1.0 ) ) = 0.25
+		
+		_SpecAmount ( "Specular Amount", Range( 0.0, 32.0 ) ) = 1.0
 		_SpecTexAmount ( "Spec Texture Amount", Range( 0.0, 1.0 ) ) = 0.25
-		_Normalmap ( "Normalmap", 2D ) = "normal" {}
 		_Specmap ( "Specmap", 2D ) = "spec" {}
+		
+		_Normalmap ( "Normalmap", 2D ) = "normal" {}
 		
 		_DataTex ( "Data Artifact", 2D ) = "black" {}
 		_Rate ( "Artifact Rate", float ) = 2.0
@@ -15,9 +19,7 @@ Shader "Base_Artifact"
 		
 		_FresnelPower ( "Fresnel Power", Range( 0.0, 4.0 ) ) = 8.0
 		_FresnelPrimarySecondary ( "Primary/Secondary Fresnel Degree", Range( 0.0, 1.0 ) ) = 1.0
-		_FresnelTertiary ( "Fresnel Tertiary Infusion", Range( 0.0, 0.25 ) ) = 0.25
-		_FresnelBoost ( "Fresnel Boost", Range( 1.0, 8.0 ) ) = 0.0
-		_FresnelBalance ( "Fresnel Balance", Range( 0.0, 0.0625 ) ) = 0.25
+		_FresnelBalance ( "Fresnel Balance", Range( 0.0, 0.25 ) ) = 0.25
 		
 		_FresnelEmitColor ( "Fresnel Emit Color", Color ) = ( 0.89, 0.945, 1.0, 0.0 )
 		_FresnelEmitPrimarySecondary ( "Primary/Secondary Emit Fresnel Degree", Range( 0.0, 1.0 ) ) = 1.0
@@ -44,10 +46,10 @@ Shader "Base_Artifact"
 		#pragma target 3.0 
 		#pragma surface surf SimpleSpecular vertex:vert novertexlights
 		#pragma glsl
-		//fullforwardshadows approxview dualforward
-		
+
 		float _Gloss;
 		float _PrimarySecondary;
+		fixed _SpecAmount;
 		
  		float CalculateGuass( float angleNormalHalf, float blob )
  		{
@@ -56,27 +58,42 @@ Shader "Base_Artifact"
 			return exp( exponent );
  		}
 		
-		float CalculateSpecular( fixed3 lDir, fixed3 vDir, fixed3 norm, float gloss )
+		float CalculateSpecular( fixed3 lDir, fixed3 vDir, fixed3 norm, float lightSize )
 		{	 
+			fixed n_dot_l = saturate( dot( norm, lDir ) );
 			float3 halfVector = normalize( lDir + vDir );
 			float specDot = saturate( dot( halfVector, norm ) );
 			float angleNormalHalf = acos( dot( halfVector, norm ) );
-			float modGloss = gloss * _Gloss;
+			
+			float fresnel = pow( 1.0 - dot( halfVector, vDir ), 5.0 );
+			fresnel = 0.75 + ( 1.0 - fresnel ) * fresnel;
+			
+			// Guassian Microfacets
+			float modGloss = _Gloss - ( 1.0 - lightSize ) * _WorldSpaceLightPos0.w;
+			modGloss = saturate( modGloss + 0.25 );
+			float normalisation_term = ( modGloss + 2.0f ) / 8.0f;
 			
 			float primaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 8.0 ) );
-			float secondaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 4.0 ) );
-
+			float secondaryBlob = CalculateGuass( angleNormalHalf, 1.0 / ( modGloss * 4.0 ) ); 
+			
 			float tripleSpec = lerp( primaryBlob, secondaryBlob, _PrimarySecondary );
-			return tripleSpec;
+			
+			return fresnel * normalisation_term * tripleSpec * n_dot_l;
 		}
 		
 		fixed4 LightingSimpleSpecular( SurfaceOutput s, fixed3 lightDir, fixed3 viewDir, fixed atten ) 
 		{
-			fixed diff = saturate( dot( s.Normal, lightDir ) );
-			fixed spec = CalculateSpecular( lightDir, viewDir, s.Normal, 1.0f - _LightColor0.w ) * s.Specular;
+			float lightDistance = atten * 8.0; //length( _WorldSpaceLightPos0.rgb - s.Albedo ) * _WorldSpaceLightPos0.w;
+		
+			fixed spec = CalculateSpecular( lightDir, viewDir, s.Normal, lightDistance ) * s.Specular * _SpecAmount; //* ( 1.0f - _LightColor0.w )
+			fixed diff = saturate( dot( s.Normal, lightDir ) ) * s.Gloss;
+			
+			diff = lerp( diff, 0.0, spec );
 			
 			fixed4 c;
-			c.rgb = ( s.Albedo * _LightColor0.rgb * diff + _LightColor0.rgb * spec ) * atten;
+			c.rgb = diff * _LightColor0.rgb;
+			c.rgb += _LightColor0.rgb * spec;
+			c.rgb *= atten;
 			c.a = s.Alpha;
 			
 			return c;
@@ -97,19 +114,8 @@ Shader "Base_Artifact"
 	
 	 	sampler2D _Normalmap;
 	 	sampler2D _Specmap; 
-
-		fixed _SpecAmount;
-		fixed _SpecTexAmount; 
-		
-		float _FresnelPower;
-		float _FresnelPrimarySecondary;
-		float _FresnelTertiary;
-		float _FresnelBoost;
-		
-        float4 _FresnelEmitColor;
-		float _FresnelBalance;
-		
 		sampler2D _DataTex;
+		float4 _DataTex_ST;
 		
 		float _WarpScale;
 		float _WarpOffset;
@@ -142,6 +148,7 @@ Shader "Base_Artifact"
 		    screenuv.y += _Time.x * _Screeny_rate;
 			
 			o.dataUV = float4( screenuv.x, screenuv.y, 0, 0 );
+			o.dataUV.xy = TRANSFORM_TEX( o.dataUV.xy, _DataTex );
 			float4 tex = tex2Dlod( _DataTex, o.dataUV );
 			
 			float3 warp = v.vertex.xyz + float3(
@@ -154,7 +161,15 @@ Shader "Base_Artifact"
 			float dist = distance( v.vertex.xyz, warp );
 			v.vertex.xyz = lerp( warp * _WarpScale, v.vertex.xyz, dist );
 		}
-
+		
+		fixed _DiffuseAmount;
+		fixed _SpecTexAmount; 
+		
+		float _FresnelPower;
+		float _FresnelPrimarySecondary;
+		
+        float4 _FresnelEmitColor;
+		float _FresnelBalance;
 		float _FresnelEmitPower;
 		float _FresnelEmitPrimarySecondary;
 
@@ -165,18 +180,18 @@ Shader "Base_Artifact"
 			float fresnelDot = 1.0 - saturate( dot( normalize( IN.viewDir ), o.Normal ) );
 			float fresnelPrimaryBlob = pow( fresnelDot, _FresnelPower * 2.0 );
 			float fresnelSecondaryBlob = pow( fresnelDot, _FresnelPower );
-			float fresnelTertiaryBlob = pow( fresnelDot, _FresnelPower * 0.5 );
-			float fresnel = lerp( fresnelPrimaryBlob, fresnelSecondaryBlob, _FresnelPrimarySecondary ) + fresnelTertiaryBlob * _FresnelTertiary;
-			fresnel *= _FresnelBoost;
-			
-			float spec = lerp( tex2D( _Specmap, IN.uv_Specmap ).r, 1.0, _SpecTexAmount );
+			float fresnel = lerp( fresnelPrimaryBlob, fresnelSecondaryBlob, _FresnelPrimarySecondary );
+			fresnel = lerp( fresnel, 1.0, _FresnelBalance );
+			fresnel *= ( _FresnelPower + 2.0f ) / 4.0f;
 			
 			float emitPrimaryBlob = pow( fresnelDot, _FresnelEmitPower * 2.0 );
 			float emitSecondaryBlob = pow( fresnelDot, _FresnelEmitPower );
 			float emitFresnel = lerp( emitPrimaryBlob, emitSecondaryBlob, _FresnelEmitPrimarySecondary );
-			
 			o.Emission = emitFresnel * _FresnelEmitColor.rgb * ( _FresnelEmitColor.a * 16.0f );
-			o.Specular = spec * _SpecAmount * lerp( fresnel, 1.0, _FresnelBalance );
+			
+			float spec = lerp( tex2D( _Specmap, IN.uv_Specmap ).r, 1.0, _SpecTexAmount );
+			o.Specular = spec * fresnel;
+			o.Gloss = _DiffuseAmount; // Albedo in gloss
 		}
 	
 		ENDCG

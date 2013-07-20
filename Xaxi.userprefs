@@ -2,10 +2,9 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Shaders\Base_Texture.shader">
     <Files>
-      <File FileName="Assets\Shaders\Base_Artifact.shader" Line="178" Column="53" />
-      <File FileName="..\Aeon\The Cage Complex\Assets\Shaders\AEON_Base_Artifact.shader" Line="52" Column="1" />
-      <File FileName="Assets\Shaders\Base_Texture.shader" Line="143" Column="53" />
-      <File FileName="..\Aeon\The Cage Complex\Assets\Shaders\AEON_Base_Texture.shader" Line="51" Column="1" />
+      <File FileName="Assets\Shaders\Base_Texture.shader" Line="76" Column="52" />
+      <File FileName="Assets\Shaders\Base_Artifact.shader" Line="81" Column="53" />
+      <File FileName="..\Aeon\The Cage Complex\Assets\Shaders\Tri-Planar.shader" Line="22" Column="2" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
