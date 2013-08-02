@@ -8,7 +8,7 @@ public class General : MonoBehaviour
 		//Screen.fullScreen = true;
 		//Screen.SetResolution( 1920, 1080, true );
 		//Screen.lockCursor = true;
-		Application.targetFrameRate = 60;
+		//Application.targetFrameRate = 60;
 	}
 	
     void Update() 

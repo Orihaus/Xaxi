@@ -3,33 +3,45 @@ using System.Collections;
 
 public class Footsteps : MonoBehaviour 
 {
+	public float Volume = 0.25f;
+	public float StepHeight = 0.1f;
 	public float StepDelay = 1.0f;
 	public float StepOffset = 0.25f;
 	public float StepVolume = 0.25f;
 	public float StepPitch = 0.125f;
-	public float Panning = 0.25f;
-	public AudioClip[] Sounds;
-	public CharacterController Controller;
+	public AudioClip[] SoundsNormal;
+	public AudioClip[] SoundsWater;
+	public AudioSource[] AudioSources;
+	public float WaterHeight = -1.45f;
+	public bool IsMoving = false;
+	public bool PlayerStep = true;
 	
-	private bool left = true;
+	private int currentAudioSource = 0;
 	
 	void Start() 
 	{
 		StartCoroutine("Step");
 	}
-		IEnumerator Step()
+	
+	IEnumerator Step()
 	{
 		while( true )
 		{
-			if( ( Input.GetAxis( "Horizontal" ) != 0.0f || Input.GetAxis( "Vertical" ) != 0.0f ) )
+			if( PlayerStep && ( Input.GetAxis( "Horizontal" ) != 0.0f || Input.GetAxis( "Vertical" ) != 0.0f ) || IsMoving )
 			{
-				audio.clip = Sounds[ (int)(Random.value * Sounds.Length) ];
-				audio.volume = 0.275f - Random.value * StepVolume;
-				audio.pitch = 1.0f - Random.value * StepPitch;
-				if( left ) transform.localPosition = new Vector3( Panning, 0.0f, 0.0f );
-				else transform.localPosition = new Vector3( 0.0f - Panning, 0.0f, 0.0f );
-				left = !left;
-				audio.Play();
+				if( Physics.Raycast( transform.position, Vector3.down, StepHeight ) ) 
+				{
+					AudioClip[] sounds = SoundsNormal; 
+					if( transform.position.y < WaterHeight) sounds = SoundsWater;
+					
+			        currentAudioSource++;
+			        if( currentAudioSource > AudioSources.Length - 1 )
+			            currentAudioSource = 0;
+					
+					AudioSources[currentAudioSource].volume = Volume - Random.value * StepVolume;
+					AudioSources[currentAudioSource].pitch = 1.0f - Random.value * StepPitch;
+					AudioSources[currentAudioSource].PlayOneShot( sounds[(int)(Random.value * sounds.Length)] );
+				}
 			}
 			
 			yield return new WaitForSeconds( StepOffset + Random.value * StepDelay );
